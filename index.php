@@ -68,12 +68,31 @@ if (isset($_GET['auth_token']) && check_org()) {
     return ["headers" => $headers, "body" => $body];
   }
 
+  // merges two string response bodies into a single one
+  // in order to call json_decode only once
+  function merge_bodies($body_1, $body_2) {
+    if ($body_1 == "") {
+      return $body_2;
+    } else {
+      return
+        substr($body_1, 0, -1) .
+        ", " .
+        substr($body_2, 1);
+    }
+  }
+
   $ch = curl_init();
-  var_dump(fetch_data(
+  $b_1 = fetch_data(
     $ch, 
-    "https://api.github.com/orgs/$org/repos", 
+    "https://api.github.com/orgs/$org/repos?page=1", 
     $options
-  ));
+  )['body'];
+  $b_2 = fetch_data(
+    $ch, 
+    "https://api.github.com/orgs/$org/repos?page=2", 
+    $options
+  )['body'];
+  var_dump(json_decode(merge_bodies($b_1, $b_2)));
   curl_close($ch);
 }
 
