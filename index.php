@@ -148,7 +148,6 @@ if (isset($_GET['auth_token']) && check_org()) {
         pages_count($res['headers']['link']) : 0;
     }
 
-    var_dump($repos);
   }
   
   curl_close($ch);
@@ -158,13 +157,73 @@ if (isset($_GET['auth_token']) && check_org()) {
 
 
 <html>
-<body>
+<link 
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" 
+  rel="stylesheet" 
+  integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" 
+  crossorigin="anonymous"
+>
+<body style="max-width: 1000px;" class="bg-dark text-light fs-2 m-5">
 
-<form action="<?php htmlspecialchars($_SERVER["PHP_SELF"]);?> " method="get">
-  <input type="text" name="auth_token" placeholder="token">
-  <input type="text" name="org" placeholder="organizacja">
-  <button type="submit">Pokaż repozytoria</button>
+<form 
+  action="<?php htmlspecialchars($_SERVER["PHP_SELF"]); ?>" 
+  method="get" 
+  style="width: 600px;" 
+  class="p-3 mb-5"
+>
+  <div class="mb-3">
+    <label class="form-label">Token autoryzacyjny</label>
+    <input type="text" name="auth_token" class="form-control">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Nazwa organizacji</label>
+    <input type="text" name="org" class="form-control" placeholder="madkom">
+  </div>
+  <button type="submit" class="btn btn-primary my-3">Pokaż repozytoria</button>
 </form>
+
+<div class="mb-4">
+  Repozytoria organizacji:
+  <?php 
+    echo " " . (isset($org) ? $org: "---");
+  ?>
+</div>
+
+<table class="table table-dark table-striped">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Nazwa</th>
+      <th scope="col">Kontrybutorzy</th>
+      <th scope="col">Repozytorium źródłowe</th>
+    </tr>
+  </thead>
+  <?php
+    if (isset($repos)) {
+      $i = 1;
+      foreach ($repos as $r) {
+        echo '
+          <tr>
+            <th scope="row">' . $i . '</th>
+            <td><a href="' . $r['html_url'] . '">' . $r["name"] . '</a></td>
+            <td>' . $r["contribs"] . '</td>
+            <td><a href="' . $r['parent'] . '">' . $r["parent"] . '</a></td>
+          </tr>
+        ';
+        $i++;
+      }
+    } else {
+      echo '
+        <tr>
+          <th scope="row">---</th>
+          <td>---</td>
+          <td>---</td>
+          <td>---</td>
+        </tr>
+      ';
+    }
+  ?>
+</table>
 
 </body>
 </html>
