@@ -81,6 +81,18 @@ if (isset($_GET['auth_token']) && check_org()) {
     }
   }
 
+  // extracts number of pages from the response link
+  function pages_count($res_link) {
+    preg_match(
+      '/[0-9]+>; rel="last"/', 
+      $res_link, 
+      $matches, 
+      PREG_OFFSET_CAPTURE
+    );
+    $pages_count = explode(">", $matches[0][0])[0];
+    return intval($pages_count);
+  }
+
   function fetch_all_pages(&$ch, $url, $opts) {
     $page = 1;
     $collected_data = "";
@@ -121,6 +133,19 @@ if (isset($_GET['auth_token']) && check_org()) {
       } else {
         $repos[$i]['parent'] = false;
       }
+    }
+
+    // fetching repositories' contributor numbers
+    for ($i = 0; $i < count($repos); $i++) {
+      $res = fetch_data(
+        $ch, 
+        $repos[$i]['contributors_url'] . "?per_page=1&anon=true",
+        $options
+      );
+
+      $repos[$i]['contribs'] = 
+        (array_key_exists("link", $res['headers'])) ? 
+        pages_count($res['headers']['link']) : 0;
     }
 
     var_dump($repos);
