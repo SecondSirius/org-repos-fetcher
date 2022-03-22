@@ -4,6 +4,19 @@ $err_org_name = false;
 $err_code = false;
 $war_no_repos = false;
 
+// sorts repositories by column
+function sorted_repos($repos, $col, $asc) {
+  // $sort_by = array_column($repos, $col);
+  $column = array_column($repos, $col);
+  $sort_by = array_map('strtolower', $column);
+  if ($asc) {
+    array_multisort($sort_by, SORT_ASC, $repos);
+  } else {
+    array_multisort($sort_by, SORT_DESC, $repos);
+  }
+  return $repos;
+}
+
 // checks if the organization name is passed and correct
 function check_org() {
   global $err_org_name;
@@ -149,6 +162,8 @@ if (isset($_GET['auth_token']) && check_org()) {
         (array_key_exists("link", $res['headers'])) ? 
         pages_count($res['headers']['link']) : 0;
     }
+
+    $repos = sorted_repos($repos, "name", true);
 
   } else {
     if (gettype($repos_res) == "integer") { $err_code = $repos_res; }
