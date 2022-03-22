@@ -1,8 +1,32 @@
 <?php 
 
-  if (isset($_GET['auth_token']) && isset($_GET['org'])) {
-    echo "Repozytoria organizacji: " . $_GET['org'];
+$err_org_name = false;
+
+// checks if the organization name is passed and correct
+function check_org() {
+  global $err_org_name;
+  if (isset($_GET['org'])) {
+    global $org;
+    $org = $_GET['org'];
+    if (
+      (strlen($org) > 0) && 
+      (strlen($org) < 40) &&
+      (substr($org, 0, 1) != "-") &&
+      !str_contains($org, "--") &&
+      (preg_replace("/[a-zA-Z0-9-]+/", "", $org) == "")
+    ) {
+      return true;
+    } else {
+      $org = "---";
+      $err_org_name = true;
+      return false;
+    }
+  } else {
+    return false;
   }
+}
+
+echo check_org() ? $org : "ERROR";
 
 ?>
 
