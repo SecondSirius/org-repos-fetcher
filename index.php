@@ -65,7 +65,7 @@ if (isset($_GET['auth_token']) && check_org()) {
     if ($res_code >= 400) {
       return $res_code;
     }
-    return ["headers" => $headers, "body" => $body];
+    return ['headers' => $headers, 'body' => $body];
   }
 
   // merges two string response bodies into a single one
@@ -81,18 +81,33 @@ if (isset($_GET['auth_token']) && check_org()) {
     }
   }
 
+  function fetch_all_pages(&$ch, $url, $opts) {
+    $page = 1;
+    $collected_data = "";
+
+    while (true) {
+      $res = 
+        fetch_data($ch, $url . "?per_page=100&page=$page", $opts);
+      if (gettype($res) == "integer") {
+        return $res;
+      } elseif (!empty($res['body']) && $res['body'] !== "[]") {
+        $collected_data = merge_bodies($collected_data, $res['body']);
+      } else {
+        return $collected_data;
+      }
+      $page++;
+    }
+  }
+
+
+
   $ch = curl_init();
-  $b_1 = fetch_data(
+  $all_pages = fetch_all_pages(
     $ch, 
     "https://api.github.com/orgs/$org/repos?page=1", 
     $options
-  )['body'];
-  $b_2 = fetch_data(
-    $ch, 
-    "https://api.github.com/orgs/$org/repos?page=2", 
-    $options
-  )['body'];
-  var_dump(json_decode(merge_bodies($b_1, $b_2)));
+  );
+  var_dump(json_decode($all_pages));
   curl_close($ch);
 }
 
