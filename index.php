@@ -6,7 +6,6 @@ $war_no_repos = false;
 
 // sorts repositories by column
 function sorted_repos($repos, $col, $asc) {
-  // $sort_by = array_column($repos, $col);
   $column = array_column($repos, $col);
   $sort_by = array_map('strtolower', $column);
   if ($asc) {
@@ -15,6 +14,22 @@ function sorted_repos($repos, $col, $asc) {
     array_multisort($sort_by, SORT_DESC, $repos);
   }
   return $repos;
+}
+
+// serializes repositories in order to insert them into an html form
+function serialized_repos($repos) {
+  $serialized = "";
+  $i = 0;
+  foreach ($repos as $r) {
+    $serialized = 
+      $serialized .
+      '<input type="text" name="passed_repos[' . $i . '][name]" value="' . $r['name'] . '" hidden>' .
+      '<input type="text" name="passed_repos[' . $i . '][contribs]" value="' . $r['contribs'] . '" hidden>' .
+      '<input type="text" name="passed_repos[' . $i . '][parent]" value="' . $r['parent'] . '" hidden>' .
+      '<input type="text" name="passed_repos[' . $i . '][html_url]" value="' . $r['html_url'] . '" hidden>';
+    $i++;
+  }
+  return $serialized;
 }
 
 // checks if the organization name is passed and correct
@@ -41,6 +56,7 @@ function check_org() {
   }
 }
 
+// do when received a request for organisation's repositories
 if (isset($_GET['auth_token']) && check_org()) {
   $auth_token = $_GET['auth_token'];
 
@@ -164,6 +180,7 @@ if (isset($_GET['auth_token']) && check_org()) {
     }
 
     $repos = sorted_repos($repos, "name", true);
+    $sm = "n-asc";
 
   } else {
     if (gettype($repos_res) == "integer") { $err_code = $repos_res; }
@@ -171,6 +188,27 @@ if (isset($_GET['auth_token']) && check_org()) {
   }
   
   curl_close($ch);
+}
+
+// do when received a request for sorting repositories
+if (isset($_GET['sort_mode'])) {
+  $org = $_GET['org_passed'];
+  $sm = $_GET['sort_mode'];
+  $pr = $_GET['passed_repos'];
+  switch ($sm) {
+    case "n-asc":
+      $repos = sorted_repos($pr, 'name', true);
+      break;
+    case "n-desc":
+      $repos = sorted_repos($pr, 'name', false);
+      break;
+    case "c-asc":
+      $repos = sorted_repos($pr, 'contribs', true);
+      break;
+    case "c-desc":
+      $repos = sorted_repos($pr, 'contribs', false);
+      break;
+  }
 }
 
 ?>
@@ -219,7 +257,7 @@ if ($err_org_name) {
   echo '
   <div class="alert alert-danger" role="alert">
     Niepoprawna nazwa organizacji. <br>
-    Nazwa organizacji:
+    Wytyczne:
     <ul>
       <li>może składać się maksymalnie z 39 znaków</li>
       <li>może zawierać tylko znaki alfanumeryczne i "-"</li>
@@ -254,6 +292,22 @@ if ($err_org_name) {
     echo " " . (isset($org) ? $org: "---");
   ?>
 </div>
+
+<?php 
+if (isset($repos)) { 
+  $s_repos = serialized_repos($repos);
+?>
+  <form action="<?php htmlspecialchars($_SERVER["PHP_SELF"]); ?> " method="get" style="width: 300px;">
+  <input type="text" name="org_passed" value="<?php echo $org; ?>" hidden>
+    <?php echo $s_repos; ?>
+    <select name="sort_mode" class="form-select" onchange="this.form.submit()">
+      <option <?php echo ($sm == "n-asc") ? "selected" : "" ?> value="n-asc">Nazwa rosnąco</option>
+      <option <?php echo ($sm == "n-desc") ? "selected" : "" ?> value="n-desc">Nazwa malejąco</option>
+      <option <?php echo ($sm == "c-asc") ? "selected" : "" ?> value="c-asc">Kontrybutorzy rosnąco</option>
+      <option <?php echo ($sm == "c-desc") ? "selected" : "" ?> value="c-desc">Kontrybutorzy malejąco</option>
+    </select>
+  </form>
+<?php }?>
 
 <table class="table table-dark table-striped">
   <thead>
