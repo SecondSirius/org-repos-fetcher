@@ -1,6 +1,8 @@
 <?php 
 
 $err_org_name = false;
+$err_code = false;
+$war_no_repos = false;
 
 // checks if the organization name is passed and correct
 function check_org() {
@@ -148,6 +150,9 @@ if (isset($_GET['auth_token']) && check_org()) {
         pages_count($res['headers']['link']) : 0;
     }
 
+  } else {
+    if (gettype($repos_res) == "integer") { $err_code = $repos_res; }
+    if (empty($repos_res)) { $war_no_repos = true; }
   }
   
   curl_close($ch);
@@ -164,6 +169,52 @@ if (isset($_GET['auth_token']) && check_org()) {
   crossorigin="anonymous"
 >
 <body style="max-width: 1000px;" class="bg-dark text-light fs-2 m-5">
+
+<?php 
+if ($err_code == 404) {
+  echo '
+  <div class="alert alert-danger" role="alert">
+    Nie znaleziono organizacji "' . $org . '"
+  </div>
+  ';
+} else if ($err_code == 401) {
+  echo '
+  <div class="alert alert-danger" role="alert">
+    Użytkownik niezautoryzowany. <br>
+    Upewnij się, że token jest poprawny.
+  </div>
+  ';
+} else if ($err_code) {
+  echo '
+  <div class="alert alert-danger" role="alert">
+    Wystąpił błąd. Kod: ' . $err_other . '
+  </div>
+  ';
+}
+
+if ($war_no_repos) {
+  echo '
+  <div class="alert alert-warning" role="alert">
+    Organizacja "' . $org . '" nie posiada repozytoriów.
+  </div>
+  ';
+}
+
+if ($err_org_name) {
+  echo '
+  <div class="alert alert-danger" role="alert">
+    Niepoprawna nazwa organizacji. <br>
+    Nazwa organizacji:
+    <ul>
+      <li>może składać się maksymalnie z 39 znaków</li>
+      <li>może zawierać tylko znaki alfanumeryczne i "-"</li>
+      <li>nie może zaczynać się od "-"</li>
+      <li>nie może zawierać "--"</li>
+    </ul>  
+  </div>
+  ';
+}
+?>
 
 <form 
   action="<?php htmlspecialchars($_SERVER["PHP_SELF"]); ?>" 
