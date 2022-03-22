@@ -99,16 +99,21 @@ if (isset($_GET['auth_token']) && check_org()) {
     }
   }
 
-
-
+  // fetching respositories of the chosen organisation
   $ch = curl_init();
-  $all_pages = fetch_all_pages(
+  $repos_res = fetch_all_pages(
     $ch, 
-    "https://api.github.com/orgs/$org/repos?page=1", 
+    "https://api.github.com/orgs/$org/repos", 
     $options
   );
-  var_dump(json_decode($all_pages));
-  curl_close($ch);
+
+  if (gettype($repos_res) != "integer" && !empty($repos_res)) {
+    var_dump(json_decode($repos_res));
+  } else {
+    var_dump($repos_res);
+  }
+  
+
 }
 
 ?>
