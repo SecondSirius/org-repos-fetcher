@@ -107,13 +107,26 @@ if (isset($_GET['auth_token']) && check_org()) {
     $options
   );
 
+  // do only if repos were fetched correctly
   if (gettype($repos_res) != "integer" && !empty($repos_res)) {
-    var_dump(json_decode($repos_res));
-  } else {
-    var_dump($repos_res);
+    $repos = json_decode($repos_res, true);
+
+    // fetching forks' parents
+    for ($i = 0; $i < count($repos); $i++) {
+      if ($repos[$i]['fork']) {
+        $parent_res_body = 
+          fetch_data($ch, $repos[$i]['url'], $options)['body'];
+        $parent = json_decode($parent_res_body, true);
+        $repos[$i]['parent'] = $parent['parent']['html_url'];
+      } else {
+        $repos[$i]['parent'] = false;
+      }
+    }
+
+    var_dump($repos);
   }
   
-
+  curl_close($ch);
 }
 
 ?>
