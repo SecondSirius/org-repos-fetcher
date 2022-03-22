@@ -283,7 +283,20 @@ if ($err_org_name) {
     <label class="form-label">Nazwa organizacji</label>
     <input type="text" name="org" class="form-control" placeholder="madkom">
   </div>
-  <button type="submit" class="btn btn-primary my-3">Pokaż repozytoria</button>
+  <button
+    id="btn-get-repos"
+    onclick="
+      const spin = document.getElementById('spinner');
+      const btnTxt = document.getElementById('btn-txt');
+      const btnGetRepos = document.getElementById('btn-get-repos');
+      btnGetRepos.disabled = true;
+      btnTxt.style.display = 'none';
+      spin.style.display = 'block';" 
+    type="submit" 
+    class="btn btn-primary my-3">
+    <span id="spinner" style="display: none;" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+    <span id="btn-txt">Pokaż repozytoria</span>
+  </button>
 </form>
 
 <div class="mb-4">
