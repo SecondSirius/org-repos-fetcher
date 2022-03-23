@@ -160,32 +160,66 @@ if (isset($_GET['auth_token']) && check_org()) {
     $repos = json_decode($repos_res, true);
     $mh = curl_multi_init();
 
-    
-    // fetching forks' parents
+    // adding curl handles to multi_handle
+    $chs = ['parents' => [], 'contribs' => []];
     for ($i = 0; $i < count($repos); $i++) {
       if ($repos[$i]['fork']) {
-        $parent_res_body = 
-          fetch_data($ch, $repos[$i]['url'], $options)['body'];
-        $parent = json_decode($parent_res_body, true);
-        $repos[$i]['parent'] = $parent['parent']['html_url'];
+        $ch_p = curl_init();
+        array_push(
+          $chs['parents'], 
+          ['headers' => [], 'body' => $ch_p]
+        );
+        config_curl(
+          $ch_p, 
+          $repos[$i]['url'], 
+          $options, 
+          $chs['parents'][$i]['headers']
+        );
+        curl_multi_add_handle($mh, $ch_p);
+      } else {
+        array_push($chs['parents'], false);
+      }
+
+      $ch_c = curl_init();
+      array_push(
+        $chs['contribs'], 
+        ['headers' => [], 'body' => $ch_c]
+      );
+      config_curl(
+        $ch_c, 
+        $repos[$i]['contributors_url'] . '?per_page=1&anon=true', 
+        $options, 
+        $chs['contribs'][$i]['headers']
+      );
+      curl_multi_add_handle($mh, $ch_c);
+    }
+
+    // executing multi_handle
+    $running = null;
+    do {
+      curl_multi_exec($mh, $running);
+    } while ($running);
+
+    // adding fetched data to repositories and closing curl handles
+    for ($i = 0; $i < count($repos); $i++) {
+      $parent = $chs['parents'][$i];
+      $contribs = $chs['contribs'][$i];
+      if ($parent) {
+        curl_multi_remove_handle($mh, $parent['body']);
+        $parent_body = curl_multi_getcontent($parent['body']);
+        $parent_json = json_decode($parent_body, true);
+        $repos[$i]['parent'] = $parent_json['html_url'];
       } else {
         $repos[$i]['parent'] = false;
       }
+
+      curl_multi_remove_handle($mh, $contribs['body']);
+      $repos[$i]['contribs'] =
+        (array_key_exists("link", $contribs['headers'])) ? 
+        pages_count($contribs['headers']['link']) : 0;
     }
 
-    // fetching repositories' contributor numbers
-    for ($i = 0; $i < count($repos); $i++) {
-      $res = fetch_data(
-        $ch, 
-        $repos[$i]['contributors_url'] . "?per_page=1&anon=true",
-        $options
-      );
-
-      $repos[$i]['contribs'] = 
-        (array_key_exists("link", $res['headers'])) ? 
-        pages_count($res['headers']['link']) : 0;
-    }
-    
+    curl_multi_close($mh);
 
     $repos = sorted_repos($repos, "name", true);
     $sm = "n-asc";
