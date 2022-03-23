@@ -73,14 +73,12 @@ if (isset($_GET['auth_token']) && check_org()) {
     CURLOPT_CAINFO => "cacert.pem"
   ];
 
-  // sends a single request to URL
-  // returns response headers(as an array) and body(as a string)
-  function fetch_data(&$ch, $url, $opts) {
+  // configures passed curl handler
+  function config_curl(&$ch, $url, $opts, &$headers) {
     curl_setopt_array($ch, $opts);
     curl_setopt($ch, CURLOPT_URL, $url);
 
     // mapping headers into an associative array
-    $headers = [];
     curl_setopt($ch, CURLOPT_HEADERFUNCTION, 
       function ($curl, $header) use (&$headers) {
         $len = strlen($header);
@@ -90,7 +88,14 @@ if (isset($_GET['auth_token']) && check_org()) {
         return $len;
       }
     );
+  }
 
+  // sends a single request to URL
+  // returns response headers(as an array) and body(as a string)
+  function fetch_data(&$ch, $url, $opts) {
+    
+    $headers = [];
+    config_curl($ch, $url, $opts, $headers);
     $body = curl_exec($ch);
     $res_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     if ($res_code >= 400) {
@@ -153,7 +158,9 @@ if (isset($_GET['auth_token']) && check_org()) {
   // do only if repos were fetched correctly
   if (gettype($repos_res) != "integer" && !empty($repos_res)) {
     $repos = json_decode($repos_res, true);
+    $mh = curl_multi_init();
 
+    
     // fetching forks' parents
     for ($i = 0; $i < count($repos); $i++) {
       if ($repos[$i]['fork']) {
@@ -178,6 +185,7 @@ if (isset($_GET['auth_token']) && check_org()) {
         (array_key_exists("link", $res['headers'])) ? 
         pages_count($res['headers']['link']) : 0;
     }
+    
 
     $repos = sorted_repos($repos, "name", true);
     $sm = "n-asc";
