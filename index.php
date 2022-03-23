@@ -56,10 +56,12 @@ function check_org() {
   }
 }
 
-// do when received a request for organisation's repositories
-if (isset($_GET['auth_token']) && check_org()) {
+if (isset($_GET['auth_token'])) {
   $auth_token = $_GET['auth_token'];
+}
 
+// do when received a request for organisation's repositories
+if (check_org()) {
   $headers = [
     "Authorization: Token $auth_token",
     "User-Agent: PHP"
@@ -273,6 +275,7 @@ if ($err_code == 404) {
   </div>
   ';
 } else if ($err_code == 401) {
+  $org = "---";
   echo '
   <div class="alert alert-danger" role="alert">
     Użytkownik niezautoryzowany. <br>
@@ -319,7 +322,12 @@ if ($err_org_name) {
 >
   <div class="mb-3">
     <label class="form-label">Token autoryzacyjny</label>
-    <input type="text" name="auth_token" class="form-control">
+    <input 
+      type="text" 
+      name="auth_token" 
+      class="form-control" 
+      value="<?php echo isset($auth_token) ? $auth_token : ""; ?>"
+    >
   </div>
   <div class="mb-3">
     <label class="form-label">Nazwa organizacji</label>
@@ -355,6 +363,13 @@ if (isset($repos)) {
   <form action="<?php htmlspecialchars($_SERVER["PHP_SELF"]); ?> " method="get" style="width: 300px;">
   <input type="text" name="org_passed" value="<?php echo $org; ?>" hidden>
     <?php echo $s_repos; ?>
+    <input 
+      type="text" 
+      name="auth_token" 
+      class="form-control" 
+      value="<?php echo isset($auth_token) ? $auth_token : ""; ?>"
+      hidden
+    >
     <select name="sort_mode" class="form-select" onchange="this.form.submit()">
       <option <?php echo ($sm == "n-asc") ? "selected" : "" ?> value="n-asc">Nazwa rosnąco</option>
       <option <?php echo ($sm == "n-desc") ? "selected" : "" ?> value="n-desc">Nazwa malejąco</option>
