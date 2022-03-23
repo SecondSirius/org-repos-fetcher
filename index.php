@@ -207,7 +207,7 @@ if (isset($_GET['auth_token']) && check_org()) {
       if ($parent) {
         curl_multi_remove_handle($mh, $parent['body']);
         $parent_body = curl_multi_getcontent($parent['body']);
-        $parent_json = json_decode($parent_body, true);
+        $parent_json = json_decode($parent_body, true)['parent'];
         $repos[$i]['parent'] = $parent_json['html_url'];
       } else {
         $repos[$i]['parent'] = false;
